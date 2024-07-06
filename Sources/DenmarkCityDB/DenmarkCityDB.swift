@@ -78,7 +78,7 @@ public struct DenmarkCityService {
             isInCity: { location in
                 cityOpenDatabase = setupDatabase(dbPath: cityDbURL?.path() ?? "")
                 
-                let queryInTree = "SELECT city_data.* FROM city_data, city_index WHERE city_data.id=demo_index.id AND minX<=\(location.longitude) AND maxX>=\(location.longitude) AND minY<=\(location.latitude) AND maxY>=\(location.latitude);"
+                let queryInTree = "SELECT city_data.* FROM city_data, city_index WHERE city_data.id=city_index.id AND minX<=\(location.longitude) AND maxX>=\(location.longitude) AND minY<=\(location.latitude) AND maxY>=\(location.latitude);"
                 
                 guard let cityOpenDatabase = cityOpenDatabase else {
                     logger.warning("no city open database available")
