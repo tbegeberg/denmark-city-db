@@ -85,7 +85,7 @@ public struct DenmarkCityService {
                 
                 guard let cityOpenDatabase = cityOpenDatabase else {
                     logger.warning("no city open database available")
-                    return false
+                    return CityQueryResult(cityName: nil, isInCity: false)
                 }
 
                 return await queryCity(db: cityOpenDatabase, queryStatementString: queryInTree)
