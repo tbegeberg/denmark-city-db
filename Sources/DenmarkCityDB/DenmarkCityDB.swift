@@ -5,9 +5,9 @@ import SQLite3
 
 public struct DenmarkCityService {
     
-    public typealias CityQueryResult = (cityName: String?, isInCity: Bool)
+    public typealias City = String
     
-    public var isInCity: (_ at: CLLocationCoordinate2D) async -> CityQueryResult
+    public var isInCity: (_ at: CLLocationCoordinate2D) async -> Result<City, QueryError>
     
     public static var live: Self {
         let logger = Logger(subsystem: Bundle.module.bundleIdentifier!, category: "Denmark City Service")
@@ -27,7 +27,7 @@ public struct DenmarkCityService {
             }
         }
         
-        func queryCity(db: OpaquePointer, queryStatementString: String) async -> CityQueryResult {
+        func queryCity(db: OpaquePointer, queryStatementString: String) async -> Result<City, QueryError> {
             var queryStatement: OpaquePointer?
             
             return await withCheckedContinuation { continution in
@@ -37,7 +37,7 @@ public struct DenmarkCityService {
                     while sqlite3_step(queryStatement) == SQLITE_ROW {
 
                         guard let queryResultCol1 = sqlite3_column_text(queryStatement, 1) else {
-                            continution.resume(returning: CityQueryResult(cityName: nil, isInCity: false))
+                            continution.resume(returning: .failure(.missingDataInTable(message: "No data in column 1")))
                             sqlite3_finalize(queryStatement)
                             if sqlite3_close(db) != SQLITE_OK {
                                 logger.error("error closing database")
@@ -49,7 +49,7 @@ public struct DenmarkCityService {
                         let cityName = String(cString: queryResultCol1)
                         logger.info("\nQuery Result: \(cityName)")
                         
-                        continution.resume(returning: CityQueryResult(cityName: cityName, isInCity: true))
+                        continution.resume(returning: .success(City(cityName)))
                         sqlite3_finalize(queryStatement)
                         if sqlite3_close(db) != SQLITE_OK {
                             logger.error("error closing database")
@@ -63,7 +63,7 @@ public struct DenmarkCityService {
                     
                     logger.error("\nQuery is not prepared \(errorMessage)")
                     
-                    continution.resume(returning: CityQueryResult(cityName: nil, isInCity: false))
+                    continution.resume(returning: .failure(.queryNonPrepared(message: errorMessage)))
                     sqlite3_finalize(queryStatement)
                     if sqlite3_close(db) != SQLITE_OK {
                         logger.error("error closing database")
@@ -73,7 +73,7 @@ public struct DenmarkCityService {
                     return
                 }
                 sqlite3_finalize(queryStatement)
-                continution.resume(returning: CityQueryResult(cityName: nil, isInCity: false))
+                continution.resume(returning: .failure(.noResults))
             }
         }
         
@@ -85,7 +85,7 @@ public struct DenmarkCityService {
                 
                 guard let cityOpenDatabase = cityOpenDatabase else {
                     logger.warning("no city open database available")
-                    return CityQueryResult(cityName: nil, isInCity: false)
+                    return .failure(QueryError.noOpenDatabase)
                 }
 
                 return await queryCity(db: cityOpenDatabase, queryStatementString: queryInTree)
