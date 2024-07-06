@@ -9,7 +9,7 @@ public struct DenmarkCityService {
     
     public var isInCity: (_ at: CLLocationCoordinate2D) async -> CityQueryResult
     
-    public static var liveValue: Self {
+    public static var live: Self {
         let logger = Logger(subsystem: Bundle.module.bundleIdentifier!, category: "Denmark City Service")
         let cityDbURL = Bundle.module.url(forResource: "cityDB", withExtension: "sqlite")
         var cityOpenDatabase: OpaquePointer?
